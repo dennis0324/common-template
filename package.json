@@ -1,0 +1,21 @@
+{
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.18.1",
+    "@typescript-eslint/parser": "^6.18.1",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "name": "mangaview-core",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "dennis ko",
+  "license": "MIT",
+  "description": "",
+  "dependencies": {
+    "eslint-plugin-prettier": "^5.1.3",
+    "xhr2": "^0.2.1"
+  }
+}

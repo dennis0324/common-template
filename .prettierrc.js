@@ -1,0 +1,11 @@
+module.exports = {
+  // 문자열은 따옴표로 formatting
+  singleQuote: true,
+  //코드 마지막에 세미콜른이 있게 formatting
+  semi: true,
+  // 들여쓰기 너비는 2칸
+  tabWidth: 2,
+  // 코드 한줄이 maximum 80칸
+  printWidth: 80,
+  trailingComma: 'all',
+};
