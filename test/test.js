@@ -1,12 +1,8 @@
 const operationType = Object.freeze({
-  ALL: 0,
+  NONE: 0,
   ACTION: 1,
   ATTR: 2,
 });
-// temp start
-
-//temp
-//
 
 const loggerMethod = Object.create(null);
 loggerMethod.log = {
@@ -54,21 +50,15 @@ const methodStructure = {
 };
 
 function createMethod(options) {
-  console.log('creating prototype', options?.type, options?.name);
   var method = {};
 
-  console.log(options?.type);
-
   if (options?.type ^ operationType.ACTION) {
-    console.log('action added');
     method = { ...methodStructure.action, ...method };
   }
   if (options?.type ^ operationType.ATTR) {
-    console.log('attr added');
     method = { ...methodStructure.attr, ...method };
   }
 
-  console.log('method', method);
   return method;
 }
 
@@ -76,13 +66,45 @@ function createLogger(options) {
   return loggerFactory(options);
 }
 
+function delayLog(...message) {
+  this.startTime = Date.now();
+
+  var resolve, reject;
+  const dfd = new Promise(function (_resolve, _reject) {
+    resolve = _resolve;
+    reject = _reject;
+  });
+
+  dfd.then((time) => console.log(`[delayed ${time / 1000}SEC]`, message.join(' ')));
+
+  this.done = function () {
+    resolve(Date.now() - this.startTime);
+  };
+  this.fail = function () {
+    reject();
+  };
+}
+
+function checkFlag(cmp, src) {
+  console.log(cmp, src);
+  return (cmp & src) == src;
+}
+
 function createBuilder(self, options) {
+  console.log(self?.type);
   const builder = (...args) => {
-    return args;
+    if (checkFlag(options.type, operationType.ACTION | operationType.ATTR)) {
+      return new delayLog(args);
+    }
+    if (checkFlag(options.type, operationType.ATTR)) {
+      console.log('[delay]', args.join(' '));
+    }
+    if (checkFlag(options.type, operationType.ACTION)) {
+      console.log('action');
+    }
   };
 
   builder.type |= options.type;
-  console.log('type added', builder.type);
 
   const proto = Object.defineProperties(() => {}, {
     ...createMethod(options),
@@ -99,8 +121,9 @@ const loggerFactory = (options) => {
   return logger;
 };
 
-Object.defineProperties(createLogger.prototype, createMethod({ type: operationType.ALL }));
+Object.defineProperties(createLogger.prototype, createMethod({ type: operationType.NONE }));
 const logger = createLogger();
-console.log(logger.log.delay('test'));
-// console.log(createMethod({ type: operationType.ALL }));
-// console.log(loggerMethod);
+
+logger.delay.log('testing', 'hello2');
+
+logger.delay('testing', 'hello');
