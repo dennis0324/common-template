@@ -1,4 +1,5 @@
-// ts-check
+// TODO: refactor all of this
+//  ts-check
 import chalk from "chalk";
 
 /**
@@ -134,7 +135,6 @@ function delayLog(messageData, args) {
 
   dfd.then((time) => {
     displayLog(messageData, {sec : time / 1000});
-    // console.log(actionStr, message.join(" "), attrStr.join(" "));
   });
 
   this.done = function() {
@@ -161,7 +161,6 @@ function delayFormatter(_, opts) {
 }
 
 function actionFormatter(messages, opts) {
-  console.log("opts", opts);
   const displayString = messages.name.toUpperCase();
   if (messages.name === "debug")
     return chalk.white.bgGray(`${displayString}`);
@@ -179,7 +178,6 @@ function actionFormatter(messages, opts) {
  * @param {AdditionalInfo} additionInfo
  */
 function displayLog(messages, additionInfo) {
-  console.log("messsages", messages);
   const displayString = [ messages.action, messages.message, ...messages.attr ];
   const arr = displayString.map((message) => {
     if (typeof message === "function") {
@@ -192,37 +190,46 @@ function displayLog(messages, additionInfo) {
   console.log(arr.join(" "));
 }
 
+function applyColor(self, additionalInfo, ...args) {
+  const builderSelf = {...self};
+  self.type = 0;
+  self.displayStr = [];
+  const actionStr = builderSelf.displayStr[0];
+  const attrStr = builderSelf.displayStr.slice(1);
+
+  const messageFormat = {
+    action : actionStr,
+    message : args.join(" "),
+    attr : attrStr,
+    ...additionalInfo,
+  };
+  console.log(self.level, additionalInfo);
+  console.log("builderSelf", builderSelf);
+
+  if (checkFlag(builderSelf.type, operationType.ATTR | operationType.ACTION)) {
+    if (builderSelf.level <= additionalInfo.level) {
+      console.log("executing delay log")
+      createLogger.type = 0;
+      createLogger.displayStr = [];
+      console.log(createLogger);
+      return new delayLog(messageFormat);
+    }
+  }
+  else {
+    if (builderSelf.level <= additionalInfo.level) {
+      console.log("printing log");
+      displayLog(messageFormat);
+    }
+  }
+}
+
 /**
  * @param {object} self
  * @param {AdditionalInfo} additionalInfo
  */
 function createBuilder(self, additionalInfo) {
-  const builder = (...args) => {
-    const actionStr = self.displayStr[0];
-    const attrStr = self.displayStr.slice(1);
-
-    const messageFormat = {
-      action : actionStr,
-      message : args.join(" "),
-      attr : attrStr,
-      ...additionalInfo,
-    };
-    console.log("testing");
-
-    if (checkFlag(self.type, operationType.ATTR | operationType.ACTION)) {
-      if (self.level <= additionalInfo.level)
-        return new delayLog(messageFormat);
-    }
-    else {
-      console.log(self.level, additionalInfo);
-      if (self.level <= additionalInfo.level)
-        displayLog(messageFormat);
-    }
-
-    self.displayStr = [];
-    self.type = 0;
-  };
-
+  console.log(self);
+  const builder = (...args) => applyColor(builder, additionalInfo, ...args);
   self.type |= additionalInfo.type;
 
   var message = null;
@@ -253,6 +260,7 @@ const loggerFactory = (options = {}) => {
   const level = options?.level ?? 1;
   const logger = (...strArgs) => strArgs.join(" ");
 
+  // initailize valuable do not change in runtime
   logger.type = 0;
   logger.displayStr = [];
   logger.level = level;
