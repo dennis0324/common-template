@@ -53,7 +53,11 @@ const defaultDefination = {
   }
 };
 
-const defaultGroup = {};
+const defaultGroup = {
+  locations : {
+    fg : [ 0 ],
+  }
+};
 
 export const defaultOpts = {
   defaultGroup,
@@ -89,17 +93,26 @@ function delayLog(messageData, args) {
   };
 }
 
-function createBuilder(msgData, loggerSettings) {
+function createBuilder(loggerSettings, msgData, decoratorSettings) {
   const builder = (...args) => {
     console.log("outcome", msgData);
+    const fgString = loggerSettings.locations.fg.map(index => msgData.decorators[index]);
+    var bgString = null;
+    if (loggerSettings.locations?.bg == undefined) {
+      bgString = Object.entries(msgData.decorators).filter(([ index, decorator ]) => loggerSettings.locations.fg.includes(index));
+    }
+    else
+      bgString = loggerSettings.locations.bg.map(index => msgData.decorators[index]);
+    console.log(fgString.join(' '), args.join(' '), bgString.join(' '))
 
-    console.log(loggerSettings.colorCode(`[${loggerSettings.name}]`), args.join(' '));
-    msgData = 0;
-    if (args.length > 0)
-      return new delayLog(...args);
+    msgData.level = 0;
+    // if (args.length > 0)
+    //   return new delayLog(...args);
   };
 
-  builder.level = msgData;
+  builder.level = msgData?.level;
+  builder.decorators = msgData?.decorators;
+  builder.loggerSettings = loggerSettings;
 
   const proto = Object.defineProperties(() => {}, {
     ...ob,
@@ -107,13 +120,22 @@ function createBuilder(msgData, loggerSettings) {
   Object.setPrototypeOf(builder, proto);
   return builder;
 }
-function createAttr(level) {
+
+/**
+ *
+ */
+function createAttr({level, decorators}, decoratorSetting) {
   if (level == undefined) {
     level = 0;
+    decorators = {};
   }
-  else
-    level = level + 1;
-  return level;
+  level = level + 1;
+  decorators[decoratorSetting.group] = decoratorSetting.colorCode(`[${decoratorSetting.name}]`);
+  // need to add decorator and decorators
+  return {
+    level,
+    decorators
+  };
 }
 
 const ob = Object.create(null);
@@ -128,11 +150,13 @@ function initializeSetting(ops) {
   definations.forEach(([ definationName, element ]) => {
     ob[definationName] = {
       get() {
-        const {level} = this;
-        // attribute is data for message that will be printed
-        const modifiedAttr = createAttr(level);
+        const {level, decorators, loggerSettings} = this;
+        console.log("decorators", level, decorators);
         element.name = definationName;
-        const builder = createBuilder(modifiedAttr, element);
+        // attribute is data for message that will be printed
+        const modifiedAttr = createAttr({level, decorators}, element);
+        console.log("modifiedAttr", modifiedAttr, "\n");
+        const builder = createBuilder(loggerSettings, modifiedAttr, element);
         Object.defineProperty(this, definationName, {value : builder});
         return builder;
       }
@@ -143,16 +167,18 @@ function initializeSetting(ops) {
 function createLoop(opts = defaultOpts) {
   initializeSetting(opts)
   const loop = createBuilder();
+  loop.loggerSettings = opts.defaultGroup;
   return loop
 }
 
 const loop = createLoop();
-loop.debug.log.warn.error("testing error");
-loop.debug.log("test log");
-loop.log.warn("test warn");
-loop.error.debug("test debug");
-// const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-// const a = loop.build.build("testing");
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// const a = loop.debug.debug("testing");
+// loop.debug.log.warn.error("testing error");
+// loop.log.log("test log");
+// loop.log.warn("test warn");
+// loop.error.debug("test debug");
 // await sleep(1000);
 // loop.build.build.build.build.build()
 // a.done();
+//
