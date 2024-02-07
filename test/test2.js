@@ -92,27 +92,41 @@ function delayLog(messageData, args) {
     reject();
   };
 }
+function testing(self, loggerSettings, ...args) {
+  // console.log("outcome", self);
+  const fgString = loggerSettings.locations.fg.map(index => self.decorators[index]);
+  var bgString = null;
+  if (loggerSettings.locations?.bg == undefined) {
+    bgString = Object.entries(self.decorators).filter(([ index, decorator ]) => loggerSettings.locations.fg.includes(index));
+  }
+  else
+    bgString = loggerSettings.locations.bg.map(index => self.decorators[index]);
+  console.log(fgString.join(' '), args.join(' '), bgString.join(' '))
+}
 
 function createBuilder(loggerSettings, msgData, decoratorSettings) {
-  const builder = (...args) => {
-    console.log("outcome", msgData);
-    const fgString = loggerSettings.locations.fg.map(index => msgData.decorators[index]);
-    var bgString = null;
-    if (loggerSettings.locations?.bg == undefined) {
-      bgString = Object.entries(msgData.decorators).filter(([ index, decorator ]) => loggerSettings.locations.fg.includes(index));
-    }
-    else
-      bgString = loggerSettings.locations.bg.map(index => msgData.decorators[index]);
-    console.log(fgString.join(' '), args.join(' '), bgString.join(' '))
-
-    msgData.level = 0;
-    // if (args.length > 0)
-    //   return new delayLog(...args);
-  };
+  const builder = (...args) => testing(builder, loggerSettings, ...args);
+  // const builder = (...args) => {
+  //   console.log("outcome", msgData);
+  //   const fgString = loggerSettings.locations.fg.map(index => msgData.decorators[index]);
+  //   var bgString = null;
+  //   if (loggerSettings.locations?.bg == undefined) {
+  //     bgString = Object.entries(msgData.decorators).filter(([ index, decorator ]) => loggerSettings.locations.fg.includes(index));
+  //   }
+  //   else
+  //     bgString = loggerSettings.locations.bg.map(index => msgData.decorators[index]);
+  //   console.log(fgString.join(' '), args.join(' '), bgString.join(' '))
+  //
+  //   msgData.level = 0;
+  //   // if (args.length > 0)
+  //   //   return new delayLog(...args);
+  // };
 
   builder.level = msgData?.level;
-  builder.decorators = msgData?.decorators;
+  builder.decorators = {...msgData?.decorators};
+  // console.log("msgData", msgData?.decorators);
   builder.loggerSettings = loggerSettings;
+  builder.decoratorSetting = decoratorSettings;
 
   const proto = Object.defineProperties(() => {}, {
     ...ob,
@@ -151,11 +165,11 @@ function initializeSetting(ops) {
     ob[definationName] = {
       get() {
         const {level, decorators, loggerSettings} = this;
-        console.log("decorators", level, decorators);
         element.name = definationName;
-        // attribute is data for message that will be printed
-        const modifiedAttr = createAttr({level, decorators}, element);
-        console.log("modifiedAttr", modifiedAttr, "\n");
+        // atte ribute is data for message that will be printed
+        const copyDecorators = {...decorators};
+        const modifiedAttr = createAttr({level, decorators : copyDecorators}, element);
+        // console.log("modifiedAttr", modifiedAttr, "\n");
         const builder = createBuilder(loggerSettings, modifiedAttr, element);
         Object.defineProperty(this, definationName, {value : builder});
         return builder;
@@ -174,10 +188,10 @@ function createLoop(opts = defaultOpts) {
 const loop = createLoop();
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // const a = loop.debug.debug("testing");
-// loop.debug.log.warn.error("testing error");
-// loop.log.log("test log");
-// loop.log.warn("test warn");
-// loop.error.debug("test debug");
+loop.debug.log.warn.error("testing error");
+loop.debug.log("test log");
+loop.log.warn("test warn");
+loop.error.debug("test debug");
 // await sleep(1000);
 // loop.build.build.build.build.build()
 // a.done();
