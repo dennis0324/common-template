@@ -5,7 +5,7 @@
 // TODO: make group of message should not be duplicated
 // Printing message can be string or function
 
-import chalk from 'chalk';
+import chalk from "chalk";
 
 /**
  * @typedef DefinationElement
@@ -51,19 +51,19 @@ const defaultDefination = {
     level : 9999,
     colorCode : chalk.white.bgBlueBright,
     bgFormat : "[<%status%> <%time%> sec]",
-    isPromise : true // default false
-  }
+    isPromise : true, // default false
+  },
 };
 
 const defaultGroup = {
   locations : {
     fg : [ 0 ],
-  }
+  },
 };
 
 export const defaultOpts = {
   defaultGroup,
-  defaultDefination
+  defaultDefination,
 };
 
 // basic format convertor
@@ -74,76 +74,65 @@ export const defaultOpts = {
 function formatter(self, decorators, ...args)
 {
   var format = self.loggerSettings.displayFormat;
-  if (decorators)
-    format = decorators;
-  format = format.replace(/<%(\s|)status(\s|)%>/g, statusFormat(self));
 
-  const date = format.match(/<%(\s|)(date_format(\s|)\(.*\))(\s|)%>/g);
-  const date_format =
-      date?.[0]?.replace(/(<%(\s|)(date|date_format)(\s|)\()|(\)(\s|)%>)/g, '');
-  console.log(date, date_format);
-  format = format.replace(/<%(\s|)(date|date_format(\s|)\(.*\))(\s|)%>/g,
-                          dateFormat(null, null, date_format));
-  format = format.replace(/<%(\s|)message(\s|)%>/g,
-                          messageFormat(null, null, ...args));
-  format = format.replace(/<%(\s|)fg(\s|)%>/g, fgFormat(self, decorators));
-  format = format.replace(/<%(\s|)bg(\s|)%>/g, statusFormat(self));
-  return format
+  const matchFunction =
+      format.match(/<%(.*?)%>/g).map((str) => str.replace(/(<%)|(%>)/g, ""));
+  console.log(matchFunction);
+  // if (decorators)
+  //   format = decorators;
+  // format =
+  //     format.replace(/<%(\s|)status(\s|)%>/g, statusFormat(self,
+  //     decorators));
+  //
+  // const date = format.match(/<%(\s|)(date\.format(\s|)\(.*\))(\s|)%>/g);
+  // const date_format = date?.[0]?.replace(
+  //     /(<%(\s|)(date|date\.format)(\s|)\()|(\)(\s|)%>)/g, '');
+  // console.log(date, date_format);
+  // format = format.replace(/<%(\s|)(date|date\.format(\s|)\(.*\))(\s|)%>/g,
+  //                         dateFormat(null, null, date_format));
+  // format = format.replace(/<%(\s|)message(\s|)%>/g,
+  //                         messageFormat(null, null, ...args));
+  // format = format.replace(/<%(\s|)fg(\s|)%>/g, fgFormat(self, decorators));
+  // format = format.replace(/<%(\s|)bg(\s|)%>/g, statusFormat(self));
+  return format;
 }
 
+// _format method should have three parameter self, decorator, ...args
+// regex and funcition should define
+
 // WARN: not quite sure what should i in parameter
-function statusFormat(self, decorator) { return "name" }
+function statusFormat(self, decorator)
+{
+  console.log("decorator", decorator);
+  return "name";
+}
+
 function dateFormat(self, decorator, args) { return args; }
-function messageFormat(self, decorator, ...args) { return args.join(' '); }
+function messageFormat(self, decorator, ...args) { return args.join(" "); }
 function fgFormat(self, decorator)
 {
   if (decorator)
-    return '';
-  const fg =
-      self.loggerSettings.locations.fg.map(index => self.decorators[index]);
+    return "";
+  const fg = self.loggerSettings.locations.fg.map(
+      (index) => self.decorators[index],
+  );
   console.log("fg", fg);
-  return fg.map(decorator => {
+  return fg.map((decorator) => {
     console.log(decorator.fgFormat);
-    formatter(self, decorator.fgFormat)
+    console.log("asdf", formatter(self, decorator.fgFormat));
   });
 }
 
-function makeString(decorator, ...args)
-{
-  if (decorator.value) {
-    const temp = decorator.value(...args);
-    return decorator.colorCode(temp);
-  }
-  return decorator.colorCode(decorator.name);
-}
-
+// formatter should accept two ways
+// 1. formatter(self)
+// 2. formatter(self, decorator) -> this should not use bg and fg
+//
 function displayMessage(self, loggerSettings, ...args)
 {
   console.log("outcome", self);
+  formatter(self);
 
-  // Promise state
-  // if (self.isPromise)
-  //   return new delayLog(self, args);
-
-  const fgString =
-      loggerSettings.locations.fg.map(index => self.decorators[index]);
-  var bgIndexs = loggerSettings.locations.bg;
-  if (bgIndexs == undefined) {
-    bgIndexs = Object.keys(self.decorators)
-                   .filter(key => loggerSettings.locations.fg.indexOf(
-                                      parseInt(key)) < 0);
-  }
-  const bgString = bgIndexs.map(index => self.decorators[index]);
-
-  const testingfront = fgString.map(decorator => makeString(decorator))
-  const testingback = bgString.map(decorator => makeString(decorator))
-  console.log("foramt", formatter(self, null, ...args));
-  console.log(testingfront.join(' '), testingback.join(' '));
-
-  // need to add delayed message handler
-  // console.log(fgString.join(' '), args.join(' '), bgString.join(' '))
-  // if (fgString.length <= 0)
-  //   fgString.push(bgString.splice(0, 1));
+  // need tot format decorators first then format displayFormat
 }
 
 function createBuilder(loggerSettings, msgData, decoratorSettings)
@@ -192,7 +181,7 @@ function initializeSetting(ops)
 {
   // property checking state
   // TODO: need to simplify this
-  Object.keys(ops.defaultDefination).forEach(key => {
+  Object.keys(ops.defaultDefination).forEach((key) => {
     const config = ops.defaultDefination[key];
     if (config.group == undefined)
       throw new Error("group is not defined");
@@ -207,8 +196,8 @@ function initializeSetting(ops)
     if (config.fgFormat == undefined)
       config.fgFormat = "[<%status%>]";
 
-    ops.defaultDefination[key]
-  })
+    ops.defaultDefination[key];
+  });
 
   ops.defaultGroup.displayFormat =
       ops.defaultGroup.displayFormat ?? "<%fg%> <%message%> <%bg%>";
@@ -216,31 +205,31 @@ function initializeSetting(ops)
   const definations = Object.entries(ops.defaultDefination);
 
   definations.forEach(([ definationName, element ]) => {
-    ob[definationName] =
-    {
-      get()
-      {
+    ob[definationName] = {
+      get() {
         const {level, decorators, loggerSettings, isPromise} = this;
         element.name = definationName;
         // atte ribute is data for message that will be printed
         const copyDecorators = {...decorators};
         const modifiedAttr = createAttr(
-            {level, decorators : copyDecorators, isPromise}, element);
+            {level, decorators : copyDecorators, isPromise},
+            element,
+        );
         console.log("modifiedAttr", modifiedAttr, "\n");
         const builder = createBuilder(loggerSettings, modifiedAttr, element);
         Object.defineProperty(this, definationName, {value : builder});
         return builder;
-      }
-    }
-  })
+      },
+    };
+  });
 }
 
 function createLoop(opts = defaultOpts)
 {
-  initializeSetting(opts)
+  initializeSetting(opts);
   const loop = createBuilder();
   loop.loggerSettings = opts.defaultGroup;
-  return loop
+  return loop;
 }
 
 const loop = createLoop();
