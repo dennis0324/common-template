@@ -1,285 +1,211 @@
-// TODO: refactor all of this
-//  ts-check
+// TODO: define message order that should be displayed
+// also need to make setting for index that go fg or bg
+// example: fg : 2 -> [action] [action] message [rest]
+
+// TODO: make group of message should not be duplicated
+// Printing message can be string or function
+
 import chalk from "chalk";
 
+import {LoggerConfig} from '../core/configModules.js'
+
 /**
- * @typedef options
- * @type {object}
- * @property {number?} level
+ * @typedef DefinationElement
+ * @type {Object}
+ * @property {number} group
+ * @property {number} level
+ * @property {import('chalk').ChalkInstance} colorCodegroup
  *
  */
 
 /**
- * @typedef AdditionalInfo
+ * @typedef DefinationOptions
  * @type {object}
- * @property {number} type
- * @property {string} name
- *
+ * @property {Object.<string, DefinationElement>} defaultDefination
  */
-
-const operationType = Object.freeze({
-  NONE : 0,
-  ACTION : 1,
-  ATTR : 2,
-});
 
 /**
- * {
- *  @property {function} log
- *  @property {function} debug
- *  @property {function} warn
- *  @property {function} error
- *  @property {function} delay
- * }
+ * @type {Definations} definations
  */
-const loggerMethod = Object.create(null);
-loggerMethod.debug = {
-  get() {
-    const builder = createBuilder(this, {
-      type : operationType.ACTION,
-      name : "debug",
-      level : 0,
-    });
-    Object.defineProperty(this, "debug", {value : builder});
-
-    return builder;
+// additional need to make config class for logger to manage easy
+const defaultDefination = {
+  debug : {
+    group : 0,
+    level : 0,
+    colorCode : chalk.white.bgGray,
+  },
+  log : {
+    group : 0,
+    level : 1,
+    colorCode : chalk.white,
+  },
+  warn : {
+    group : 0,
+    level : 2,
+    colorCode : chalk.black.bgYellowBright,
+  },
+  error : {
+    group : 0,
+    level : 3,
+    colorCode : chalk.white.bgRedBright,
+  },
+  delay : {
+    group : 1,
+    level : 9999,
+    colorCode : chalk.white.bgBlueBright,
+    displayFormat : "[ <% log.name %> ]",
+    Promise : function() { return "" }, // default false
   },
 };
 
-loggerMethod.log = {
-  get() {
-    const builder = createBuilder(this, {
-      type : operationType.ACTION,
-      name : "log",
-      level : 1,
-    });
-    Object.defineProperty(this, "log", {value : builder});
-
-    return builder;
+const defaultGroup = {
+  locations : {
+    fg : [ 0 ],
   },
 };
 
-loggerMethod.warn = {
-  get() {
-    const builder = createBuilder(this, {
-      type : operationType.ACTION,
-      name : "warn",
-      level : 2,
-    });
-    Object.defineProperty(this, "warn", {value : builder});
-    return builder;
-  },
+export const defaultOpts = {
+  defaultGroup,
+  defaultDefination,
 };
 
-loggerMethod.error = {
-  get() {
-    const builder = createBuilder(this, {
-      type : operationType.ACTION,
-      name : "error",
-      level : 3,
-    });
-    Object.defineProperty(this, "error", {value : builder});
-    return builder;
-  },
-};
-
-const methodStructure = {
-  get action() {
-    return loggerMethod;
-  },
-  get attr() {
-    const attr = Object.create(null);
-    attr.delay = {
-      get() {
-        const builder = createBuilder(this, {
-          type : operationType.ATTR,
-          name : "delay",
-        });
-        Object.defineProperty(this, "delay", {value : builder});
-
-        return builder;
-      },
-    };
-    return attr;
-  },
-};
-
-function createMethod(options) {
-  var method = {};
-
-  if (options?.type ^ operationType.ACTION) {
-    method = {...methodStructure.action, ...method};
-  }
-  if (options?.type ^ operationType.ATTR) {
-    method = {...methodStructure.attr, ...method};
-  }
-
-  return method;
-}
-
+// basic format convertor
 /**
- * @param {options} options
+ * this function will convert decorators to string
+ * @param {...any} args - this is for message input that will be printed
  */
-function createLogger(options) {
-  return loggerFactory(options);
+function formatter(self, decorators, ...args)
+{
+  var format = self.loggerSettings.displayFormat;
+
+  const matchFunction =
+      format.match(/<%(.*?)%>/g).map((str) => str.replace(/(<%)|(%>)/g, ""));
+  console.log(matchFunction);
+  return format;
 }
 
-function delayLog(messageData, args) {
-  this.startTime = Date.now();
+// _format method should have three parameter self, decorator, ...args
+// regex and funcition should define
 
-  var resolve, reject;
-  const dfd = new Promise(function(_resolve, _reject) {
-    resolve = _resolve;
-    reject = _reject;
+// WARN: not quite sure what should i put in the parameter
+function statusFormat(self, decorator)
+{
+  console.log("decorator", decorator);
+  return "name";
+}
+
+function dateFormat(self, decorator, args) { return args; }
+function messageFormat(self, decorator, ...args) { return args.join(" "); }
+function fgFormat(self, decorator)
+{
+  if (decorator)
+    return "";
+  const fg = self.loggerSettings.locations.fg.map(
+      (index) => self.decorators[index],
+  );
+  console.log("fg", fg);
+  return fg.map((decorator) => {
+    console.log(decorator.fgFormat);
+    console.log("asdf", formatter(self, decorator.fgFormat));
   });
-
-  dfd.then((time) => {
-    displayLog(messageData, {sec : time / 1000});
-  });
-
-  this.done = function() {
-    resolve(Date.now() - this.startTime);
-  };
-  this.fail = function() {
-    reject();
-  };
 }
 
-function checkFlag(cmp, src) {
-  return (cmp & src) == src;
+// formatter should accept two ways
+// 1. formatter(self)
+// 2. formatter(self, decorator) -> this should not use bg and fg
+//
+function displayMessage(self, loggerSettings, ...args)
+{
+  console.log("outcome", self);
+  formatter(self);
+
+  // need tot format decorators first then format displayFormat
 }
 
-/**
- * @param {options} opts
- */
-function delayFormatter(_, opts) {
-  const sec = opts?.sec;
-  if (sec == null || sec == undefined)
-    return chalk.white.bgBlueBright(`[DELAY]`);
-  else
-    return chalk.white.bgBlueBright(`[DELAYED] ${sec}sec`);
-}
+function createBuilder(loggerSettings, msgData, decoratorSettings)
+{
+  const builder = (...args) => displayMessage(builder, loggerSettings, ...args);
 
-function actionFormatter(messages, opts) {
-  const displayString = messages.name.toUpperCase();
-  if (messages.name === "debug")
-    return chalk.white.bgGray(`${displayString}`);
-  else if (messages.name === "log")
-    return chalk.white(`${displayString}`);
-  else if (messages.name === "warn")
-    return chalk.black.bgYellowBright(`${displayString}`);
-  else if (messages.name === "error")
-    return chalk.white.bgRedBright(`${displayString}`);
-}
-
-/**
- * this function determine messageData is string or function and change to string
- * @param {object[]} message
- * @param {AdditionalInfo} additionInfo
- */
-function displayLog(messages, additionInfo) {
-  const displayString = [ messages.action, messages.message, ...messages.attr ];
-  const arr = displayString.map((message) => {
-    if (typeof message === "function") {
-      return message(messages, additionInfo);
-    }
-    else
-      return message;
-  });
-
-  console.log(arr.join(" "));
-}
-
-function applyColor(self, additionalInfo, ...args) {
-  const builderSelf = {...self};
-  self.type = 0;
-  self.displayStr = [];
-  const actionStr = builderSelf.displayStr[0];
-  const attrStr = builderSelf.displayStr.slice(1);
-
-  const messageFormat = {
-    action : actionStr,
-    message : args.join(" "),
-    attr : attrStr,
-    ...additionalInfo,
-  };
-  console.log(self.level, additionalInfo);
-  console.log("builderSelf", builderSelf);
-
-  if (checkFlag(builderSelf.type, operationType.ATTR | operationType.ACTION)) {
-    if (builderSelf.level <= additionalInfo.level) {
-      console.log("executing delay log")
-      createLogger.type = 0;
-      createLogger.displayStr = [];
-      console.log(createLogger);
-      return new delayLog(messageFormat);
-    }
-  }
-  else {
-    if (builderSelf.level <= additionalInfo.level) {
-      console.log("printing log");
-      displayLog(messageFormat);
-    }
-  }
-}
-
-/**
- * @param {object} self
- * @param {AdditionalInfo} additionalInfo
- */
-function createBuilder(self, additionalInfo) {
-  console.log(self);
-  const builder = (...args) => applyColor(builder, additionalInfo, ...args);
-  self.type |= additionalInfo.type;
-
-  var message = null;
-  if (checkFlag(additionalInfo.type, operationType.ATTR)) {
-    message = delayFormatter; // delayFormatter
-  }
-  else if (checkFlag(additionalInfo.type, operationType.ACTION)) {
-    message = actionFormatter; // actionFormatter
-  }
-  self.displayStr.splice(additionalInfo.type - 1, 0, message);
-
-  builder.type = self.type;
-  builder.displayStr = self.displayStr;
-  builder.level = self.level;
+  // need to make custom proerty dynamically
+  builder.level = msgData?.level;
+  builder.decorators = {...msgData?.decorators};
+  builder.loggerSettings = loggerSettings;
+  builder.isPromise = msgData?.isPromise;
+  // builder.
 
   const proto = Object.defineProperties(() => {}, {
-    ...createMethod(additionalInfo),
+    ...ob,
   });
   Object.setPrototypeOf(builder, proto);
   return builder;
 }
-Object.setPrototypeOf(createLogger.prototype, Function.prototype);
 
 /**
- * @param {level?:number} options
+ *
  */
-const loggerFactory = (options = {}) => {
-  const level = options?.level ?? 1;
-  const logger = (...strArgs) => strArgs.join(" ");
+function createAttr({level, decorators, isPromise}, decoratorSetting)
+{
+  if (level == undefined) {
+    level = 0;
+    decorators = {};
+    isPromise = false;
+  }
+  level = level + 1;
 
-  // initailize valuable do not change in runtime
-  logger.type = 0;
-  logger.displayStr = [];
-  logger.level = level;
+  decorators[decoratorSetting.group] = decoratorSetting;
 
-  Object.setPrototypeOf(logger, createLogger.prototype);
-  return logger;
-};
+  if (decoratorSetting.isPromise)
+    isPromise = true;
+  // need to add decorator and decorators
+  return {level, decorators, isPromise};
+}
 
-Object.defineProperties(
-    createLogger.prototype,
-    createMethod({type : operationType.NONE}),
-);
-const logger = createLogger();
+const ob = Object.create(null);
 
-export const LogLevel = {
-  DEBUG : 0,
-  LOG : 1,
-  WARN : 2,
-  ERROR : 3,
-};
-export {createLogger};
-export default logger;
+/**
+ * @param {@param {DefinationOptions} ops}
+ */
+function initializeSetting(loggerConfig)
+{
+  console.log('loggerCOnfig', loggerConfig);
+  const definations = Object.entries(loggerConfig.getStatusConfig());
+
+  definations.forEach(([ definationName, element ]) => {
+    ob[definationName] = {
+      get() {
+        const {level, decorators, loggerSettings, isPromise, loggerConfig} =
+            this;
+        console.log('loggerConfig2', loggerConfig)
+        element.name = definationName;
+        // atte ribute is data for message that will be printed
+        const copyDecorators = {...decorators};
+        const modifiedAttr = createAttr(
+            {level, decorators : copyDecorators, isPromise},
+            element,
+        );
+        console.log("modifiedAttr", modifiedAttr, "\n");
+        const builder = createBuilder(loggerSettings, modifiedAttr, element);
+        Object.defineProperty(this, definationName, {value : builder});
+        return builder;
+      },
+    };
+  });
+}
+
+/**
+ * @param {configModules} configModule
+ */
+function createLoop(configModule)
+{
+
+  console.log(configModule)
+  initializeSetting(configModule);
+  // loop.loggerSettings = opts.defaultGroup;
+  // configModule에서 설정 값 빼서 넣기
+  const loop = createBuilder();
+  loop.loggerConfig = configModule;
+  return loop;
+}
+
+// const logger = createLoop();
+export {createLoop};

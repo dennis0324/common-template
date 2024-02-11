@@ -25,6 +25,7 @@ import chalk from "chalk";
 /**
  * @type {Definations} definations
  */
+// additional need to make config class for logger to manage easy
 const defaultDefination = {
   debug : {
     group : 0,
@@ -50,8 +51,8 @@ const defaultDefination = {
     group : 1,
     level : 9999,
     colorCode : chalk.white.bgBlueBright,
-    bgFormat : "[<%status%> <%time%> sec]",
-    isPromise : true, // default false
+    displayFormat : "[ <% log.name %> ]",
+    Promise : function() { return "" }, // default false
   },
 };
 
@@ -78,29 +79,13 @@ function formatter(self, decorators, ...args)
   const matchFunction =
       format.match(/<%(.*?)%>/g).map((str) => str.replace(/(<%)|(%>)/g, ""));
   console.log(matchFunction);
-  // if (decorators)
-  //   format = decorators;
-  // format =
-  //     format.replace(/<%(\s|)status(\s|)%>/g, statusFormat(self,
-  //     decorators));
-  //
-  // const date = format.match(/<%(\s|)(date\.format(\s|)\(.*\))(\s|)%>/g);
-  // const date_format = date?.[0]?.replace(
-  //     /(<%(\s|)(date|date\.format)(\s|)\()|(\)(\s|)%>)/g, '');
-  // console.log(date, date_format);
-  // format = format.replace(/<%(\s|)(date|date\.format(\s|)\(.*\))(\s|)%>/g,
-  //                         dateFormat(null, null, date_format));
-  // format = format.replace(/<%(\s|)message(\s|)%>/g,
-  //                         messageFormat(null, null, ...args));
-  // format = format.replace(/<%(\s|)fg(\s|)%>/g, fgFormat(self, decorators));
-  // format = format.replace(/<%(\s|)bg(\s|)%>/g, statusFormat(self));
   return format;
 }
 
 // _format method should have three parameter self, decorator, ...args
 // regex and funcition should define
 
-// WARN: not quite sure what should i in parameter
+// WARN: not quite sure what should i put in the parameter
 function statusFormat(self, decorator)
 {
   console.log("decorator", decorator);
@@ -192,9 +177,7 @@ function initializeSetting(ops)
     if (config.isPromise == undefined)
       config.isPromise = false;
     if (config.bgFormat == undefined)
-      config.bgFormat = "[<%status%>]";
-    if (config.fgFormat == undefined)
-      config.fgFormat = "[<%status%>]";
+      config.displayFormat = "[<% log.name %>]";
 
     ops.defaultDefination[key];
   });

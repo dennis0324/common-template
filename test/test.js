@@ -1,16 +1,16 @@
 import chalk from "chalk";
 
-import {createLogger,
-        LogLevel} from "../src/common/logger.js";
+import {createLoop} from "../src/common/logger.js";
+import {LoggerConfig} from "../src/core/configModules.js";
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const log = createLogger({level : LogLevel.DEBUG});
-const a = log.delay.log("testing");
-console.log(log);
+// const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// const log = createLogger();
+// const a = log.delay.log("testing");
+// console.log(log);
 
 // const a = logger.delay.log("testing");
 // log.error("testing error");
-// log.log("testing log");
+// log.log("testing log
 // log.warn("testing warn");
 // log.debug("testing debug");
 // await sleep(1000);
@@ -18,3 +18,8 @@ console.log(log);
 // chalk.blue("hello");
 // console.log(chalk);
 // console.log(chalk.blue);
+
+const a = new LoggerConfig();
+console.log('a', a);
+const logger = createLoop(a);
+console.log('asdf');

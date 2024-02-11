@@ -13,7 +13,7 @@ log.time : print logger running time (notice: ONLY IN PROMISE MODE)
 
 log.status: show array of status
 
-log.name: return value of status (only in status)
+log.name: return value of status (only in status) // actually just make a message name and use this for compatiblity
 
 log.user.[you_function] :
 ```
@@ -91,8 +91,8 @@ user custom function or class instance
 [statusname]:{
   group: 0,                                 // needed: default: 0
   colorCode:chalk.blue.bgRed,               // type: chalkInstance(ex)  optional: default: default
-  status: [ "oh Yes [<% log.name %>]" ],  // optional default: [<% log.status %>]
-  isPromise: false,                         // optional default: false
+  displayFormat: [ "oh Yes [<% log.name %>]" ],  // optional default: [<% log.status %>]
+  callback: false,                         // optional default: false
   // hidden property
 
 }
