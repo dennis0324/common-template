@@ -1,11 +1,5 @@
-// TODO: define message order that should be displayed
-// also need to make setting for index that go fg or bg
-// example: fg : 2 -> [action] [action] message [rest]
-
-// TODO: make group of message should not be duplicated
-// Printing message can be string or function
-
 import chalk from "chalk";
+import _ from "lodash";
 
 import {LoggerConfig} from '../core/configModules.js'
 
@@ -13,7 +7,6 @@ import {LoggerConfig} from '../core/configModules.js'
  * @typedef DefinationElement
  * @type {Object}
  * @property {number} group
- * @property {number} level
  * @property {import('chalk').ChalkInstance} colorCodegroup
  *
  */
@@ -28,110 +21,38 @@ import {LoggerConfig} from '../core/configModules.js'
  * @type {Definations} definations
  */
 // additional need to make config class for logger to manage easy
-const defaultDefination = {
-  debug : {
-    group : 0,
-    level : 0,
-    colorCode : chalk.white.bgGray,
-  },
-  log : {
-    group : 0,
-    level : 1,
-    colorCode : chalk.white,
-  },
-  warn : {
-    group : 0,
-    level : 2,
-    colorCode : chalk.black.bgYellowBright,
-  },
-  error : {
-    group : 0,
-    level : 3,
-    colorCode : chalk.white.bgRedBright,
-  },
-  delay : {
-    group : 1,
-    level : 9999,
-    colorCode : chalk.white.bgBlueBright,
-    displayFormat : "[ <% log.name %> ]",
-    Promise : function() { return "" }, // default false
-  },
-};
-
-const defaultGroup = {
-  locations : {
-    fg : [ 0 ],
-  },
-};
-
-export const defaultOpts = {
-  defaultGroup,
-  defaultDefination,
-};
-
-// basic format convertor
-/**
- * this function will convert decorators to string
- * @param {...any} args - this is for message input that will be printed
- */
-function formatter(self, decorators, ...args)
-{
-  var format = self.loggerSettings.displayFormat;
-
-  const matchFunction =
-      format.match(/<%(.*?)%>/g).map((str) => str.replace(/(<%)|(%>)/g, ""));
-  console.log(matchFunction);
-  return format;
-}
-
-// _format method should have three parameter self, decorator, ...args
-// regex and funcition should define
-
 // WARN: not quite sure what should i put in the parameter
-function statusFormat(self, decorator)
-{
-  console.log("decorator", decorator);
-  return "name";
-}
+function messageDisplayFormat(self, loggerConfig) {}
 
-function dateFormat(self, decorator, args) { return args; }
-function messageFormat(self, decorator, ...args) { return args.join(" "); }
-function fgFormat(self, decorator)
-{
-  if (decorator)
-    return "";
-  const fg = self.loggerSettings.locations.fg.map(
-      (index) => self.decorators[index],
-  );
-  console.log("fg", fg);
-  return fg.map((decorator) => {
-    console.log(decorator.fgFormat);
-    console.log("asdf", formatter(self, decorator.fgFormat));
-  });
-}
-
-// formatter should accept two ways
-// 1. formatter(self)
-// 2. formatter(self, decorator) -> this should not use bg and fg
-//
-function displayMessage(self, loggerSettings, ...args)
-{
-  console.log("outcome", self);
-  formatter(self);
+function displayMessage(self, config, ...args) {
+  console.log("outcome", self.loggerConfig);
+  messageDisplayFormat(self, self.loggerConfig);
 
   // need tot format decorators first then format displayFormat
 }
 
-function createBuilder(loggerSettings, msgData, decoratorSettings)
-{
-  const builder = (...args) => displayMessage(builder, loggerSettings, ...args);
+function createBuilderOption(self, config) {
+  config = config || {};
+  if (config?.finalDisplay == undefined) {
+    config.msgData = {};
+    const groupsConfig = self.config.logMessage.groups;
+  }
+
+  self.msgData = {...config.msgData }
+}
+
+/**
+ *
+ */
+function createBuilder(config, msgData) {
+  const builder = (...args) =>
+      displayMessage(builder, config, msgData, ...args);
+  if (process.env.DEBUG)
+    console.log("creating Builder...");
 
   // need to make custom proerty dynamically
-  builder.level = msgData?.level;
-  builder.decorators = {...msgData?.decorators};
-  builder.loggerSettings = loggerSettings;
-  builder.isPromise = msgData?.isPromise;
-  // builder.
+  builder.config = config;
+  createBuilderOption(builder, config);
 
   const proto = Object.defineProperties(() => {}, {
     ...ob,
@@ -143,21 +64,13 @@ function createBuilder(loggerSettings, msgData, decoratorSettings)
 /**
  *
  */
-function createAttr({level, decorators, isPromise}, decoratorSetting)
-{
-  if (level == undefined) {
-    level = 0;
-    decorators = {};
-    isPromise = false;
-  }
-  level = level + 1;
-
-  decorators[decoratorSetting.group] = decoratorSetting;
-
-  if (decoratorSetting.isPromise)
-    isPromise = true;
+function createMsgData(finalDisplay,
+                       {groupsConfig, definationName, defination}) {
+  console.log("createMsgData: msgData:", finalDisplay);
+  console.log("createMsgData: defination:", defination);
+  console.log("createMsgData: groupsConfig:", groupsConfig);
   // need to add decorator and decorators
-  return {level, decorators, isPromise};
+  return {};
 }
 
 const ob = Object.create(null);
@@ -165,26 +78,22 @@ const ob = Object.create(null);
 /**
  * @param {@param {DefinationOptions} ops}
  */
-function initializeSetting(loggerConfig)
-{
-  console.log('loggerCOnfig', loggerConfig);
-  const definations = Object.entries(loggerConfig.getStatusConfig());
+function initializeSetting(configModule) {
+  const definations = Object.entries(configModule.status);
 
-  definations.forEach(([ definationName, element ]) => {
+  definations.forEach(([ _, [ definationName, defination ] ]) => {
     ob[definationName] = {
       get() {
-        const {level, decorators, loggerSettings, isPromise, loggerConfig} =
-            this;
-        console.log('loggerConfig2', loggerConfig)
-        element.name = definationName;
+        if (process.env.DEBUG)
+          console.log("loading property: ", definationName)
+          const {callback, finalDisplay, config} = this;
         // atte ribute is data for message that will be printed
-        const copyDecorators = {...decorators};
-        const modifiedAttr = createAttr(
-            {level, decorators : copyDecorators, isPromise},
-            element,
+        const groupsConfig = configModule.logMessage;
+        const modifiedMsgData = createMsgData(
+            finalDisplay,
+            {groupsConfig, definationName, defination},
         );
-        console.log("modifiedAttr", modifiedAttr, "\n");
-        const builder = createBuilder(loggerSettings, modifiedAttr, element);
+        const builder = createBuilder(config, modifiedMsgData);
         Object.defineProperty(this, definationName, {value : builder});
         return builder;
       },
@@ -195,17 +104,16 @@ function initializeSetting(loggerConfig)
 /**
  * @param {configModules} configModule
  */
-function createLoop(configModule)
-{
-
-  console.log(configModule)
+function createLoop(configModule) {
   initializeSetting(configModule);
   // loop.loggerSettings = opts.defaultGroup;
   // configModule에서 설정 값 빼서 넣기
-  const loop = createBuilder();
-  loop.loggerConfig = configModule;
+  const loop = createBuilder(configModule);
+  // loop.config = configModule;
   return loop;
 }
 
 // const logger = createLoop();
 export {createLoop};
+
+// TODO: get all of the promise in arr and get on done()

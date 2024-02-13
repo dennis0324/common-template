@@ -45,12 +45,10 @@ const logStatusSetting = {
 }
 
 export class LoggerConfig {
-  loggerConfig = {};
-  statusConfig = {};
+  _logMessage = {};
+  _status = {};
 
-  constructor(configs = {logStatusSetting, logMessageSetting})
-  {
-    console.log("asfa");
+  constructor(configs = {logStatusSetting, logMessageSetting}) {
     // setting up logStatusSetting
     Object.values(configs.logStatusSetting).forEach(config => {
       if (config.group == undefined)
@@ -58,21 +56,21 @@ export class LoggerConfig {
       if (config.level == undefined)
         throw new error("need to put Level property");
       if (config.colorCode == undefined)
-        Object.assgin(config.colorCode, {colorCode : chalk.white});
-      if (config.dislayFormat != undefined)
-        Object.assign(config.displayFormat,
-                      {displayFormat : "[ <% log.name %>]"});
+        config.colorCode = chalk.white;
+      if (config.dislayFormat == undefined)
+        config.displayFormat = "[ <% log.name %> ]"
     })
 
-    Object.assign(this.statusConfig, configs.logStatusSetting);
+    Object.assign(this._status, configs.logStatusSetting);
 
     // setting up logMessageSetting
 
     if (configs.logMessageSetting.displayFormat == undefined)
       configs.logMessageSetting.displayFormat = logMessageSetting.displayFormat;
 
-    Object.assign(this.loggerConfig, configs.logMessageSetting);
+    Object.assign(this._logMessage, configs.logMessageSetting);
   }
 
-  // getStatusConfig() { return Object.entries(this.statusConfig) }
+  get status() { return Object.entries(this._status) }
+  get logMessage() { return this._logMessage };
 }

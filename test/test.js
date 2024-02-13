@@ -19,7 +19,13 @@ import {LoggerConfig} from "../src/core/configModules.js";
 // console.log(chalk);
 // console.log(chalk.blue);
 
+process.env.DEBUG = true;
 const a = new LoggerConfig();
 console.log('a', a);
 const logger = createLoop(a);
 console.log('asdf');
+logger.log.log("testing log ");
+
+// - [ ] display log with config setting
+// - [ ] create internal function for eval function
+// - [ ] attach to eval function with format
