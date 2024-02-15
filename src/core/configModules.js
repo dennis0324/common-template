@@ -11,7 +11,7 @@ import chalk from "chalk";
 const logMessageSetting = {
   displayFormat :
       "<% group.from(0) %> <% log.message %> <% group.from(0).to() %>",
-  groups : {0 : {override : false}}
+  groups : {0 : {override : true}}
 };
 
 const logStatusSetting = {
@@ -39,7 +39,7 @@ const logStatusSetting = {
     group : 1,
     level : 9999,
     colorCode : chalk.white.bgBlueBright,
-    displayFormat : "[ <% log.name %> ]",
+    displayFormat : "[ <% log.callback %> ]",
     Promise : async function() { return "" }, // default false
   },
 }
@@ -50,7 +50,7 @@ export class LoggerConfig {
 
   constructor(configs = {logStatusSetting, logMessageSetting}) {
     // setting up logStatusSetting
-    Object.values(configs.logStatusSetting).forEach(config => {
+    Object.entries(configs.logStatusSetting).forEach(([ name, config ]) => {
       if (config.group == undefined)
         throw new error("need to put Group property");
       if (config.level == undefined)
@@ -58,7 +58,8 @@ export class LoggerConfig {
       if (config.colorCode == undefined)
         config.colorCode = chalk.white;
       if (config.dislayFormat == undefined)
-        config.displayFormat = "[ <% log.name %> ]"
+        config.displayFormat = "[ <% log.name %> ]";
+      config.name = name;
     })
 
     Object.assign(this._status, configs.logStatusSetting);

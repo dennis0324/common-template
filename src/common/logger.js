@@ -24,21 +24,28 @@ import {LoggerConfig} from '../core/configModules.js'
 // WARN: not quite sure what should i put in the parameter
 function messageDisplayFormat(self, loggerConfig) {}
 
+function formatStatus(self) { console.log(self.finalDisplay); }
+
+// log.name:
+// messageDisplayFormat it will return logger.name(default: none)
+// statusDisplayFortmat: return status.name( default: statusname, callbackExist:
+// return promise and return done,and reject)
 function displayMessage(self, config, ...args) {
-  console.log("outcome", self.loggerConfig);
-  messageDisplayFormat(self, self.loggerConfig);
+  console.log("outcome", self);
+  formatStatus(self)
+  // messageDisplayFormat(self, self.loggerConfig);
 
   // need tot format decorators first then format displayFormat
 }
 
-function createBuilderOption(self, config) {
+function createBuilderOption(self, config, msgData) {
   config = config || {};
   if (config?.finalDisplay == undefined) {
-    config.msgData = {};
+    self.finalDisplay = {};
     const groupsConfig = self.config.logMessage.groups;
   }
 
-  self.msgData = {...config.msgData }
+  self.finalDisplay = {...msgData?.finalDisplay }
 }
 
 /**
@@ -52,7 +59,7 @@ function createBuilder(config, msgData) {
 
   // need to make custom proerty dynamically
   builder.config = config;
-  createBuilderOption(builder, config);
+  createBuilderOption(builder, config, msgData);
 
   const proto = Object.defineProperties(() => {}, {
     ...ob,
@@ -66,11 +73,19 @@ function createBuilder(config, msgData) {
  */
 function createMsgData(finalDisplay,
                        {groupsConfig, definationName, defination}) {
+  console.log("creatingMsgData", finalDisplay);
+  finalDisplay = _.cloneDeep(finalDisplay);
+
+  finalDisplay[defination.group] ??= [];
+  if (groupsConfig.groups[defination.group]?.override)
+    finalDisplay[defination.group][0] = defination;
+  else
+    finalDisplay[defination.group].push(defination);
+
   console.log("createMsgData: msgData:", finalDisplay);
-  console.log("createMsgData: defination:", defination);
-  console.log("createMsgData: groupsConfig:", groupsConfig);
+  // finalDisplay[defination.group]
   // need to add decorator and decorators
-  return {};
+  return {finalDisplay};
 }
 
 const ob = Object.create(null);
